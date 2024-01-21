@@ -153,6 +153,10 @@ def set_name_from_naming_options(autoname, doc):
     _autoname = autoname.lower()
 
     if _autoname.startswith("format:"):
-        return _format_autoname(autoname, doc)
+        name = _format_autoname(autoname, doc)
+        if doc.doctype == "Sales Invoice":
+            full_name = frappe.get_doc("Sales Invoice", doc.name).full_name
+            name = name.replace("full_name", full_name)
+        return name
 
     return doc.name
