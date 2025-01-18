@@ -8,7 +8,9 @@
   "document_type",
   "print_format",
   "letter_head",
-  "auto_name"
+  "auto_name",
+  "column_break_1",
+  "password"
  ],
  "fields": [
   {
@@ -38,6 +40,15 @@
    "in_list_view": 1,
    "label": "Letter Head",
    "options": "Letter Head"
+  },
+  {
+    "fieldtype": "Column Break",
+    "fieldname": "column_break_1"
+  },
+  {
+    "fieldname": "password",
+    "fieldtype": "Password",
+    "label": "Passwort für PDF Dokument"
   }
  ],
  "istable": 1,

@@ -21,7 +21,7 @@ from frappe.core.api.file import create_new_folder
 from frappe.model.naming import _format_autoname
 from frappe.realtime import publish_realtime
 from frappe.utils.weasyprint import PrintFormatGenerator
-
+from frappe.utils.password import get_decrypted_password
 
 def attach_pdf(doc, event=None):
     settings = frappe.get_single("PDF on Submit Settings")
@@ -35,6 +35,7 @@ def attach_pdf(doc, event=None):
         auto_name = doct.auto_name
         print_format = doct.print_format or doc.meta.default_print_format or "Standard"
         letter_head = doct.letter_head or None
+        password = get_decrypted_password(doct.doctype, doct.name, "password") if doct.password else None
 
         fallback_language = frappe.db.get_single_value("System Settings", "language") or "en"
         args = {
@@ -46,6 +47,7 @@ def attach_pdf(doc, event=None):
             "auto_name": auto_name,
             "print_format": print_format,
             "letter_head": letter_head,
+            "password": password
         }
 
         if settings.create_pdf_in_background:
@@ -60,7 +62,7 @@ def enqueue(args):
                    timeout=30, is_async=True, **args)
 
 
-def execute(doctype, name, title, lang=None, show_progress=True, auto_name=None, print_format=None, letter_head=None):
+def execute(doctype, name, title, lang=None, show_progress=True, auto_name=None, print_format=None, letter_head=None, password=None):
     """
     Queue calls this method, when it's ready.
 
@@ -95,7 +97,7 @@ def execute(doctype, name, title, lang=None, show_progress=True, auto_name=None,
         doc = frappe.get_doc(doctype, name)
         pdf_data = PrintFormatGenerator(print_format, doc, letter_head).render_pdf()
     else:
-        pdf_data = get_pdf_data(doctype, name, print_format, letter_head)
+        pdf_data = get_pdf_data(doctype, name, print_format, letter_head, password)
 
     if show_progress:
         publish_progress(66)
@@ -116,10 +118,13 @@ def create_folder(folder, parent):
     return new_folder_name
 
 
-def get_pdf_data(doctype, name, print_format: None, letterhead: None):
+def get_pdf_data(doctype, name, print_format: None, letterhead: None, password: None):
     """Document -> HTML -> PDF."""
+    options = None
+    if password:
+        options = {"password": password}
     html = frappe.get_print(doctype, name, print_format, letterhead=letterhead)
-    return frappe.utils.pdf.get_pdf(html)
+    return frappe.utils.pdf.get_pdf(html, options)
 
 
 def save_and_attach(content, to_doctype, to_name, folder, auto_name=None):
